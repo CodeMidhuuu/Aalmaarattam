@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imposter - Party Word Game (Malayalam & Manglish)</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary-neon: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.4);
+            --cyan-neon: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --imposter-red: #ef4444;
+            --imposter-glow: rgba(239, 68, 68, 0.5);
+            --civilian-green: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Outfit', 'Noto Sans Malayalam', sans-serif;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, var(--bg-main) 100%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Glassmorphism containers */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card-sm {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+
+        /* Glow effects & buttons */
+        .btn-neon-primary {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 20px var(--primary-glow);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border-radius: 14px;
+        }
+        .btn-neon-primary:hover, .btn-neon-primary:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(124, 58, 237, 0.6);
+            color: #fff;
+        }
+
+        .btn-neon-cyan {
+            background: linear-gradient(135deg, #0891b2, #0284c7);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 20px var(--cyan-glow);
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border-radius: 14px;
+        }
+        .btn-neon-cyan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(8, 145, 178, 0.6);
+            color: #fff;
+        }
+
+        .btn-neon-red {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 20px var(--imposter-glow);
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border-radius: 14px;
+        }
+
+        .badge-category {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c084fc;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-weight: 600;
+        }
+
+        /* Card flip mechanism */
+        .flip-card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 380px;
+            height: 480px;
+            margin: 0 auto;
+        }
+
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flip-card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border: 2px solid var(--card-border);
+        }
+
+        .flip-card-front {
+            background: linear-gradient(145deg, #1e1b4b, #0f172a);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, #0f172a, #1e293b);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .flip-card-back.civilian-card {
+            border-color: var(--civilian-green);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+        }
+
+        .flip-card-back.imposter-card {
+            border-color: var(--imposter-red);
+            box-shadow: 0 0 30px var(--imposter-glow);
+            background: linear-gradient(145deg, #2a0a0a, #0f172a);
+        }
+
+        /* Pulse ring */
+        .pulse-ring {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+            70% { box-shadow: 0 0 0 20px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+
+        /* Custom inputs */
+        .form-control-dark, .form-select-dark {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+        .form-control-dark:focus, .form-select-dark:focus {
+            background: rgba(15, 23, 42, 0.95);
+            border-color: var(--primary-neon);
+            color: #fff;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        /* Player avatar pills */
+        .player-pill {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 8px 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+        .player-pill.eliminated {
+            opacity: 0.4;
+            text-decoration: line-through;
+            border-color: transparent;
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Hide sections dynamically */
+        .game-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+        .game-section.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Animated timer ring */
+        .timer-circle {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto;
+        }
+        .timer-circle svg {
+            width: 140px;
+            height: 140px;
+            transform: rotate(-90deg);
+        }
+        .timer-circle circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-dasharray: 377;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+        .timer-bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+        .timer-progress {
+            stroke: var(--cyan-neon);
+            stroke-linecap: round;
+        }
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .neon-text-glow {
+            text-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+        }
+        .neon-text-red {
+            text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+            color: var(--imposter-red);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+            color: var(--civilian-green);
+        }
+    </style>
+</head>
+<body class="py-4 px-2 px-sm-3">
+
+    <div class="container max-w-lg" style="max-width: 720px;">
+        <!-- Header / Logo -->
+        <header class="text-center mb-4">
+            <div class="d-inline-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-incognito text-primary display-5" style="color: var(--primary-neon) !important;"></i>
+                <h1 class="fw-black tracking-tight m-0 text-white display-6 text-uppercase" style="letter-spacing: 2px;">
+                    IMPOSTER <span class="badge bg-danger fs-6 align-middle ms-1">MALAYALAM</span>
+                </h1>
+            </div>
+            <p class="text-muted small m-0">Find the traitor among your friends! (English • Malayalam • Manglish)</p>
+        </header>
+
+        <!-- ================= STAGE 1: SETUP SCREEN ================= -->
+        <section id="stage-setup" class="game-section active">
+            <div class="glass-card p-4 p-md-5">
+                <h3 class="fw-bold mb-4 text-center text-white d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-sliders text-info"></i> Game Setup
+                </h3>
+
+                <!-- Language / Category Selection -->
+                <div class="mb-4">
+                    <label class="form-label text-muted fw-semibold small text-uppercase">1. Choose Language & Category</label>
+                    <select id="category-select" class="form-select form-select-dark form-select-lg">
+                        <optgroup label="✨ Manglish (Single Words)">
+                            <option value="manglish-all" selected>🔥 All Manglish Words (Recommended)</option>
+                            <option value="manglish-food">🍲 Manglish: Food (Porotta vs Chappathi)</option>
+                            <option value="manglish-cinema">🎬 Manglish: Cinema (Lalettan vs Mammootty)</option>
+                            <option value="manglish-places">📍 Manglish: Places (Kochi vs Trivandrum)</option>
+                            <option value="manglish-culture">🌴 Manglish: Daily Life (Sadya vs Biriyani)</option>
+                        </optgroup>
+                        <optgroup label="🌺 Malayalam (ഒറ്റ വാക്ക് / Single Words)">
+                            <option value="malayalam-all">💥 എല്ലാ മലയാളം വാക്കുകളും (All Malayalam)</option>
+                            <option value="malayalam-food">🍲 ഭക്ഷണം (Food)</option>
+                            <option value="malayalam-cinema">🎭 സിനിമ (Cinema)</option>
+                            <option value="malayalam-places">🗺️ സ്ഥലങ്ങൾ (Places)</option>
+                        </optgroup>
+                        <optgroup label="🌐 English Categories (Single Words)">
+                            <option value="english-all">🌍 All English Words</option>
+                            <option value="english-movies">🎬 Movies & Heroes</option>
+                            <option value="english-tech">💻 Tech & Apps</option>
+                            <option value="english-food">🍕 Food & Drinks</option>
+                        </optgroup>
+                        <option value="custom">✏️ Custom Single Word Pair (Type Your Own!)</option>
+                    </select>
+                </div>
+
+                <!-- Custom Word Pair Inputs (Shown only if Custom selected) -->
+                <div id="custom-words-container" class="mb-4 p-3 glass-card-sm d-none">
+                    <h6 class="text-warning fw-bold mb-3"><i class="bi bi-pencil-square me-1"></i> Enter Custom Word Pair</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Civilian Word</label>
+                            <input type="text" id="custom-civilian-word" class="form-control form-control-dark" placeholder="e.g. Porotta">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Imposter Word</label>
+                            <input type="text" id="custom-imposter-word" class="form-control form-control-dark" placeholder="e.g. Chappathi">
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2 fs-7">*Strictly single words with no spaces!</small>
+                </div>
+
+                <!-- Number of Players -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label text-muted fw-semibold small text-uppercase m-0">2. Total Players</label>
+                        <span id="player-count-display" class="badge bg-primary fs-6 px-3 py-1">4 Players</span>
+                    </div>
+                    <input type="range" class="form-range" id="player-count-slider" min="3" max="24" value="4" oninput="updatePlayerCount(this.value)">
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span>3 Min</span>
+                        <span>12</span>
+                        <span>24 Max</span>
+                    </div>
+                </div>
+
+                <!-- Imposter Count Selection -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label text-muted fw-semibold small text-uppercase m-0">3. Number of Imposters</label>
+                        <span id="imposter-rule-badge" class="badge bg-secondary fs-7">Rule Applied</span>
+                    </div>
+                    <select id="imposter-count-select" class="form-select form-select-dark">
+                        <option value="1" selected>1 Imposter</option>
+                    </select>
+                    <small id="imposter-hint-text" class="text-info d-block mt-1 fs-7">
+                        <i class="bi bi-info-circle me-1"></i> For 3 or 4 players, only 1 Imposter is permitted.
+                    </small>
+                </div>
+
+                <!-- Player Names Dynamic Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label text-muted fw-semibold small text-uppercase m-0">4. Player Names</label>
+                        <button type="button" class="btn btn-sm btn-link text-info text-decoration-none p-0" onclick="randomizeNames()">
+                            <i class="bi bi-shuffle me-1"></i> Quick Fill
+                        </button>
+                    </div>
+                    <div id="player-names-grid" class="row g-2 max-h-48 overflow-y-auto pe-1" style="max-height: 200px;">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Start Game Action -->
+                <button type="button" class="btn btn-neon-primary w-100 py-3 fs-5 mt-2" onclick="startGame()">
+                    <i class="bi bi-play-circle-fill me-2"></i> START GAME
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= STAGE 2: ROLE REVEAL (PASS THE PHONE) ================= -->
+        <section id="stage-reveal" class="game-section text-center">
+            <div class="glass-card p-4">
+                <!-- Current Pass-the-Phone header -->
+                <div class="mb-3">
+                    <span class="badge badge-category mb-2">Step <span id="reveal-step-num">1</span> of <span id="reveal-total-num">4</span></span>
+                    <h2 class="fw-black text-white m-0" id="current-player-turn-name">Player 1's Turn</h2>
+                    <p class="text-muted small">Pass the phone to <strong id="current-player-subname" class="text-info">Player 1</strong>!</p>
+                </div>
+
+                <!-- Card Flip Container -->
+                <div class="flip-card-container mb-4">
+                    <div id="role-card" class="flip-card" onclick="toggleCardFlip()">
+                        <!-- Front Face -->
+                        <div class="flip-card-face flip-card-front">
+                            <div class="pulse-ring mb-3">
+                                <i class="bi bi-fingerprint text-white display-4"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-2">Tap to Reveal Role</h4>
+                            <p class="text-muted small px-3">Make sure no one else is looking at your screen!</p>
+                            <span class="badge bg-outline-light border px-3 py-2 rounded-pill mt-auto">
+                                <i class="bi bi-shield-lock me-1"></i> Secret Card
+                            </span>
+                        </div>
+
+                        <!-- Back Face (Revealed secret) -->
+                        <div id="role-card-back" class="flip-card-face flip-card-back">
+                            <div id="role-icon-wrapper" class="mb-2">
+                                <!-- Dynamic icon insert -->
+                            </div>
+                            <h5 id="role-title" class="fw-black text-uppercase tracking-wider mb-1">CIVILIAN</h5>
+                            <span id="role-subtitle" class="badge bg-secondary mb-3">Knows the Secret Word</span>
+
+                            <div class="w-100 py-3 my-2 glass-card-sm border-0">
+                                <small class="text-muted d-block text-uppercase fw-semibold mb-1" id="word-label-header">YOUR SECRET WORD</small>
+                                <h2 id="assigned-word-text" class="fw-extrabold text-white m-0 px-2 text-break">POROTTA</h2>
+                            </div>
+
+                            <p id="role-desc-text" class="text-muted small px-2 mb-0">
+                                Give clues about this word without letting the Imposter guess it!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Player / Action Button -->
+                <button id="btn-next-reveal" type="button" class="btn btn-neon-cyan w-100 py-3 fs-5" onclick="nextPlayerReveal()" disabled>
+                    Hide & Pass to Next Player <i class="bi bi-arrow-right-circle ms-1"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= STAGE 3: GAME / DISCUSSION TIMER ================= -->
+        <section id="stage-discussion" class="game-section">
+            <div class="glass-card p-4 text-center">
+                <span class="badge badge-category mb-3" id="game-category-badge">Category: Manglish Food</span>
+                <h3 class="fw-bold text-white mb-1"><i class="bi bi-chat-quote-fill text-warning me-2"></i>Discussion Time!</h3>
+                <p class="text-muted small mb-4">Each player takes turns giving ONE word clue.</p>
+
+                <!-- Player Order Carousel / List -->
+                <div class="glass-card-sm p-3 mb-4 text-start">
+                    <h6 class="text-info fw-bold mb-2 small text-uppercase"><i class="bi bi-people me-1"></i> Active Players & Clue Order:</h6>
+                    <div id="active-players-pills" class="d-flex flex-wrap gap-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Timer Section -->
+                <div class="my-4">
+                    <div class="timer-circle">
+                        <svg>
+                            <circle class="timer-bg" cx="70" cy="70" r="60"></circle>
+                            <circle id="timer-progress-bar" class="timer-progress" cx="70" cy="70" r="60"></circle>
+                        </svg>
+                        <div id="timer-display" class="timer-text text-white">02:00</div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="toggleTimer()">
+                            <i id="timer-icon" class="bi bi-pause-fill me-1"></i> <span id="timer-btn-text">Pause</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="resetTimer()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-3 glass-card-sm mb-4 border-dashed">
+                    <p class="small text-muted m-0">
+                        💡 <strong>Tip for Civilians:</strong> Be vague enough so the Imposter doesn't guess the word, but clear enough to prove you're innocent!
+                    </p>
+                </div>
+
+                <button type="button" class="btn btn-neon-red w-100 py-3 fs-5" onclick="goToVoting()">
+                    <i class="bi bi-ui-checks-grid me-2"></i> PROCEED TO VOTING
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= STAGE 4: VOTING & REVEAL RESULT ================= -->
+        <section id="stage-voting" class="game-section">
+            <div class="glass-card p-4 text-center">
+                <h3 class="fw-bold text-white mb-1"><i class="bi bi-vote-fill text-danger me-2"></i>Who is the Imposter?</h3>
+                <p class="text-muted small mb-4">Discuss together and tap the player voted out by the group!</p>
+
+                <div id="voting-players-grid" class="row g-3 mb-4">
+                    <!-- Dynamic Voting Player Cards -->
+                </div>
+
+                <div id="result-summary-box" class="glass-card-sm p-4 d-none mb-4">
+                    <!-- Winner announcement will be rendered here -->
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" id="btn-restart-same" class="btn btn-neon-cyan flex-fill py-3" onclick="restartSameGame()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Same Players
+                    </button>
+                    <button type="button" class="btn btn-neon-primary flex-fill py-3" onclick="resetToSetup()">
+                        <i class="bi bi-gear-fill me-1"></i> New Game Setup
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           WORD DATABASE (STRICT SINGLE-WORD PAIRS ONLY - NO SPACES)
+           ========================================================================== */
+        const WORD_DATABASE = {
+            "manglish-food": [
+                { civilian: "Porotta", imposter: "Chappathi" },
+                { civilian: "Kappi", imposter: "Chaya" },
+                { civilian: "Sadya", imposter: "Biriyani" },
+                { civilian: "Puttu", imposter: "Idiyappam" },
+                { civilian: "Unnakaya", imposter: "Pazhampori" },
+                { civilian: "Alfaham", imposter: "Shawarma" },
+                { civilian: "Kappa", imposter: "Chemb" },
+                { civilian: "Sarbath", imposter: "Kulukki" },
+                { civilian: "Payasam", imposter: "Halwa" },
+                { civilian: "Appam", imposter: "Dosa" }
+            ],
+            "manglish-cinema": [
+                { civilian: "Lalettan", imposter: "Mammootty" },
+                { civilian: "Lucifer", imposter: "Bheeshma" },
+                { civilian: "Fahadh", imposter: "Tovino" },
+                { civilian: "Drishyam", imposter: "Memories" },
+                { civilian: "Manichitrathazhu", imposter: "Anandabhadram" },
+                { civilian: "Premam", imposter: "Classmates" },
+                { civilian: "Minnal", imposter: "Krrish" },
+                { civilian: "Aadu", imposter: "Ravanaprabhu" }
+            ],
+            "manglish-places": [
+                { civilian: "Kochi", imposter: "Trivandrum" },
+                { civilian: "LuLu", imposter: "Oberon" },
+                { civilian: "Munnar", imposter: "Vagamon" },
+                { civilian: "Calicut", imposter: "Kannur" },
+                { civilian: "Varkala", imposter: "Kovalam" },
+                { civilian: "Wayanad", imposter: "Idukki" }
+            ],
+            "manglish-culture": [
+                { civilian: "Kalyanam", imposter: "Nissayam" },
+                { civilian: "Auto", imposter: "Uber" },
+                { civilian: "Onam", imposter: "Vishu" },
+                { civilian: "Chunk", imposter: "Machan" },
+                { civilian: "Mund", imposter: "Paijama" },
+                { civilian: "Thattukada", imposter: "Restaurant" }
+            ],
+            "malayalam-food": [
+                { civilian: "പൊറോട്ട", imposter: "ചപ്പാത്തി" },
+                { civilian: "കാപ്പി", imposter: "ചായ" },
+                { civilian: "സദ്യ", imposter: "ബിരിയാണി" },
+                { civilian: "പുട്ട്", imposter: "ഇടിയപ്പം" },
+                { civilian: "അൽഫാം", imposter: "ഷവർമ" },
+                { civilian: "പായസം", imposter: "ഹൽവ" }
+            ],
+            "malayalam-cinema": [
+                { civilian: "ലാലേട്ടൻ", imposter: "മമ്മൂക്ക" },
+                { civilian: "മണിച്ചിത്രത്താഴ്", imposter: "ആകാശഗംഗ" },
+                { civilian: "ലൂസിഫർ", imposter: "ഭീഷ്മ" },
+                { civilian: "പ്രേമം", imposter: "ക്ലാസ്മേറ്റ്സ്" }
+            ],
+            "malayalam-places": [
+                { civilian: "കൊച്ചി", imposter: "തിരുവനന്തപുരം" },
+                { civilian: "മൂന്നാർ", imposter: "വാഗമൺ" },
+                { civilian: "കോഴിക്കോട്", imposter: "കണ്ണൂർ" },
+                { civilian: "വയനാട്", imposter: "ഇടുക്കി" }
+            ],
+            "english-movies": [
+                { civilian: "Avengers", imposter: "Batman" },
+                { civilian: "Inception", imposter: "Interstellar" },
+                { civilian: "Titanic", imposter: "Avatar" },
+                { civilian: "Matrix", imposter: "Tron" }
+            ],
+            "english-tech": [
+                { civilian: "Instagram", imposter: "TikTok" },
+                { civilian: "iPhone", imposter: "Android" },
+                { civilian: "YouTube", imposter: "Netflix" },
+                { civilian: "Laptop", imposter: "Tablet" }
+            ],
+            "english-food": [
+                { civilian: "Pizza", imposter: "Burger" },
+                { civilian: "Sushi", imposter: "Ramen" },
+                { civilian: "Icecream", imposter: "Milkshake" },
+                { civilian: "Pasta", imposter: "Noodles" }
+            ]
+        };
+
+        // Combine categories
+        WORD_DATABASE["manglish-all"] = [
+            ...WORD_DATABASE["manglish-food"],
+            ...WORD_DATABASE["manglish-cinema"],
+            ...WORD_DATABASE["manglish-places"],
+            ...WORD_DATABASE["manglish-culture"]
+        ];
+
+        WORD_DATABASE["malayalam-all"] = [
+            ...WORD_DATABASE["malayalam-food"],
+            ...WORD_DATABASE["malayalam-cinema"],
+            ...WORD_DATABASE["malayalam-places"]
+        ];
+
+        WORD_DATABASE["english-all"] = [
+            ...WORD_DATABASE["english-movies"],
+            ...WORD_DATABASE["english-tech"],
+            ...WORD_DATABASE["english-food"]
+        ];
+
+        /* ==========================================================================
+           AUDIO SYNTHESIZER (Web Audio API - Pure JS Sound Effects)
+           ========================================================================== */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'flip') {
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'imposter') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                // Ignore audio context errors silently
+            }
+        }
+
+        /* ==========================================================================
+           GAME STATE ENGINE
+           ========================================================================== */
+        let gameState = {
+            totalPlayers: 4,
+            imposterCount: 1,
+            players: [], // [{ id, name, role: 'civilian'|'imposter', word, eliminated }]
+            currentRevealIndex: 0,
+            selectedCategory: 'manglish-all',
+            secretPair: { civilian: '', imposter: '' },
+            timerSeconds: 120,
+            timerInterval: null,
+            isTimerRunning: false,
+            cardFlipped: false
+        };
+
+        const defaultMalayalamNames = [
+            "Rahul", "Anjali", "Midhun", "Sruthi", "Fahad", "Nivin", "Dulquer",
+            "Keerthy", "Vishnu", "Parvathy", "Unni", "Reshma", "Akhil", "Divya",
+            "Siddharth", "Meera", "Arjun", "Kavya", "Basil", "Nimisha", "Appu",
+            "Ammu", "Kochu", "Unnikuttan"
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const categorySelect = document.getElementById('category-select');
+            categorySelect.addEventListener('change', (e) => {
+                const customBox = document.getElementById('custom-words-container');
+                if (e.target.value === 'custom') {
+                    customBox.classList.remove('d-none');
+                } else {
+                    customBox.classList.add('d-none');
+                }
+                playSound('click');
+            });
+
+            updatePlayerCount(4);
+            randomizeNames();
+        });
+
+        /* ==========================================================================
+           DYNAMIC SETUP & RULES LOGIC
+           ========================================================================== */
+        function updatePlayerCount(val) {
+            val = parseInt(val);
+            gameState.totalPlayers = val;
+            document.getElementById('player-count-display').innerText = `${val} Players`;
+
+            // Enforce Imposter constraint rule (players < 5 MUST be max 1 imposter)
+            const imposterSelect = document.getElementById('imposter-count-select');
+            const imposterHint = document.getElementById('imposter-hint-text');
+            const ruleBadge = document.getElementById('imposter-rule-badge');
+
+            const currentSelectedValue = parseInt(imposterSelect.value) || 1;
+            imposterSelect.innerHTML = '';
+
+            if (val < 5) {
+                // Lock strictly to 1 Imposter
+                const opt = document.createElement('option');
+                opt.value = 1;
+                opt.innerText = "1 Imposter";
+                imposterSelect.appendChild(opt);
+                imposterSelect.disabled = true;
+                
+                ruleBadge.innerText = "Locked: 1 Imposter (<5 Players)";
+                ruleBadge.className = "badge bg-warning text-dark fs-7";
+                imposterHint.innerText = "⚠️ Under 5 players, game is locked to exactly 1 Imposter for balance.";
+            } else {
+                // Allow up to floor(players / 2) or max 5 imposters
+                const maxAllowedImposters = Math.min(Math.floor(val / 2), 5);
+                imposterSelect.disabled = false;
+
+                for (let i = 1; i <= maxAllowedImposters; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.innerText = `${i} Imposters`;
+                    if (i === currentSelectedValue) opt.selected = true;
+                    imposterSelect.appendChild(opt);
+                }
+
+                ruleBadge.innerText = `Select up to ${maxAllowedImposters}`;
+                ruleBadge.className = "badge bg-success fs-7";
+                imposterHint.innerText = `💡 For ${val} players, you can choose up to ${maxAllowedImposters} Imposters.`;
+            }
+
+            renderPlayerNameInputs(val);
+        }
+
+        function renderPlayerNameInputs(count) {
+            const grid = document.getElementById('player-names-grid');
+            const existingInputs = grid.querySelectorAll('input');
+            const existingValues = Array.from(existingInputs).map(inp => inp.value);
+
+            grid.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-sm-4';
+
+                const nameVal = existingValues[i] || defaultMalayalamNames[i % defaultMalayalamNames.length];
+
+                col.innerHTML = `
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-dark border-secondary text-muted fs-7">#${i+1}</span>
+                        <input type="text" class="form-control form-control-dark player-name-input" value="${nameVal}" placeholder="Player ${i+1}">
+                    </div>
+                `;
+                grid.appendChild(col);
+            }
+        }
+
+        function randomizeNames() {
+            playSound('click');
+            const shuffled = [...defaultMalayalamNames].sort(() => 0.5 - Math.random());
+            const inputs = document.querySelectorAll('.player-name-input');
+            inputs.forEach((inp, idx) => {
+                inp.value = shuffled[idx % shuffled.length];
+            });
+        }
+
+        /* ==========================================================================
+           GAME START & ROLE ASSIGNMENT
+           ========================================================================== */
+        function startGame() {
+            playSound('click');
+            const catSelect = document.getElementById('category-select').value;
+            gameState.selectedCategory = catSelect;
+            gameState.imposterCount = parseInt(document.getElementById('imposter-count-select').value);
+
+            // Fetch Word Pair
+            if (catSelect === 'custom') {
+                const civW = document.getElementById('custom-civilian-word').value.trim();
+                const impW = document.getElementById('custom-imposter-word').value.trim();
+                
+                if (!civW || !impW) {
+                    alert('Please enter both Civilian and Imposter words for custom mode!');
+                    return;
+                }
+                
+                if (civW.includes(" ") || impW.includes(" ")) {
+                    alert('Strict Rule: Words must be SINGLE words only with NO spaces!');
+                    return;
+                }
+
+                gameState.secretPair = { civilian: civW, imposter: impW };
+            } else {
+                const wordPool = WORD_DATABASE[catSelect] || WORD_DATABASE['manglish-all'];
+                const randomPair = wordPool[Math.floor(Math.random() * wordPool.length)];
+                gameState.secretPair = { ...randomPair };
+            }
+
+            // Gather player names
+            const nameInputs = document.querySelectorAll('.player-name-input');
+            const playerList = [];
+            nameInputs.forEach((inp, i) => {
+                playerList.push({
+                    id: i,
+                    name: inp.value.trim() || `Player ${i+1}`,
+                    role: 'civilian',
+                    word: gameState.secretPair.civilian,
+                    eliminated: false
+                });
+            });
+
+            // Randomly assign Imposters
+            const indices = Array.from({ length: playerList.length }, (_, i) => i);
+            const shuffledIndices = indices.sort(() => 0.5 - Math.random());
+            for (let i = 0; i < gameState.imposterCount; i++) {
+                const impIndex = shuffledIndices[i];
+                playerList[impIndex].role = 'imposter';
+                playerList[impIndex].word = gameState.secretPair.imposter;
+            }
+
+            gameState.players = playerList;
+            gameState.currentRevealIndex = 0;
+
+            // Switch to Stage 2: Pass-the-Phone Reveal
+            switchStage('stage-reveal');
+            setupRevealStep();
+        }
+
+        /* ==========================================================================
+           STAGE 2: PASS-THE-PHONE CARD REVEAL LOGIC
+           ========================================================================== */
+        function setupRevealStep() {
+            gameState.cardFlipped = false;
+            const card = document.getElementById('role-card');
+            card.classList.remove('is-flipped');
+
+            const currentPlayer = gameState.players[gameState.currentRevealIndex];
+
+            document.getElementById('reveal-step-num').innerText = gameState.currentRevealIndex + 1;
+            document.getElementById('reveal-total-num').innerText = gameState.players.length;
+            document.getElementById('current-player-turn-name').innerText = `${currentPlayer.name}'s Turn`;
+            document.getElementById('current-player-subname').innerText = currentPlayer.name;
+
+            const btnNext = document.getElementById('btn-next-reveal');
+            btnNext.disabled = true;
+            btnNext.innerHTML = `Hide & Pass to Next Player <i class="bi bi-arrow-right-circle ms-1"></i>`;
+
+            // Prepare secret card details
+            const cardBack = document.getElementById('role-card-back');
+            const roleIconWrapper = document.getElementById('role-icon-wrapper');
+            const roleTitle = document.getElementById('role-title');
+            const roleSubtitle = document.getElementById('role-subtitle');
+            const assignedWordText = document.getElementById('assigned-word-text');
+            const roleDescText = document.getElementById('role-desc-text');
+
+            if (currentPlayer.role === 'imposter') {
+                cardBack.className = 'flip-card-face flip-card-back imposter-card';
+                roleIconWrapper.innerHTML = `<i class="bi bi-incognito text-danger display-3"></i>`;
+                roleTitle.innerText = "IMPOSTER";
+                roleTitle.className = "fw-black text-uppercase tracking-wider mb-1 neon-text-red";
+                roleSubtitle.innerText = "You are the Secret Traitor!";
+                roleSubtitle.className = "badge bg-danger mb-3";
+                assignedWordText.innerText = currentPlayer.word;
+                roleDescText.innerText = "Bluff your way through! Blend in with civilians without revealing you don't have their exact word.";
+            } else {
+                cardBack.className = 'flip-card-face flip-card-back civilian-card';
+                roleIconWrapper.innerHTML = `<i class="bi bi-shield-check text-success display-3"></i>`;
+                roleTitle.innerText = "CIVILIAN";
+                roleTitle.className = "fw-black text-uppercase tracking-wider mb-1 neon-text-green";
+                roleSubtitle.innerText = "Team Innocent";
+                roleSubtitle.className = "badge bg-success mb-3";
+                assignedWordText.innerText = currentPlayer.word;
+                roleDescText.innerText = "Give subtle clues about your word. Find out who has the imposter word!";
+            }
+        }
+
+        function toggleCardFlip() {
+            const card = document.getElementById('role-card');
+            gameState.cardFlipped = !gameState.cardFlipped;
+
+            if (gameState.cardFlipped) {
+                card.classList.add('is-flipped');
+                const currRole = gameState.players[gameState.currentRevealIndex].role;
+                playSound(currRole === 'imposter' ? 'imposter' : 'flip');
+                document.getElementById('btn-next-reveal').disabled = false;
+            } else {
+                card.classList.remove('is-flipped');
+                playSound('flip');
+            }
+        }
+
+        function nextPlayerReveal() {
+            playSound('click');
+            gameState.currentRevealIndex++;
+            if (gameState.currentRevealIndex < gameState.players.length) {
+                setupRevealStep();
+            } else {
+                // All players revealed secret words -> Start Discussion phase
+                startDiscussionStage();
+            }
+        }
+
+        /* ==========================================================================
+           STAGE 3: DISCUSSION & TIMER LOGIC
+           ========================================================================== */
+        function startDiscussionStage() {
+            switchStage('stage-discussion');
+
+            const catLabel = document.getElementById('category-select').selectedOptions[0].text;
+            document.getElementById('game-category-badge').innerText = `Category: ${catLabel}`;
+
+            // Render active clue order pills
+            const pillsContainer = document.getElementById('active-players-pills');
+            pillsContainer.innerHTML = '';
+            
+            const activeP = gameState.players.filter(p => !p.eliminated);
+            activeP.forEach((p, idx) => {
+                const pill = document.createElement('div');
+                pill.className = `player-pill ${p.eliminated ? 'eliminated' : ''}`;
+                pill.innerHTML = `
+                    <span class="badge bg-secondary rounded-circle">${idx + 1}</span>
+                    <strong class="text-white">${p.name}</strong>
+                `;
+                pillsContainer.appendChild(pill);
+            });
+
+            resetTimer();
+        }
+
+        function updateTimerCircle(secondsLeft, totalSeconds) {
+            const circle = document.getElementById('timer-progress-bar');
+            const totalDash = 377; // 2 * PI * r (r=60)
+            const fraction = secondsLeft / totalSeconds;
+            const offset = totalDash * (1 - fraction);
+            circle.style.strokeDashoffset = offset;
+
+            if (secondsLeft <= 10) {
+                circle.style.stroke = '#ef4444';
+            } else {
+                circle.style.stroke = '#06b6d4';
+            }
+        }
+
+        function toggleTimer() {
+            playSound('click');
+            const btnText = document.getElementById('timer-btn-text');
+            const icon = document.getElementById('timer-icon');
+
+            if (gameState.isTimerRunning) {
+                clearInterval(gameState.timerInterval);
+                gameState.isTimerRunning = false;
+                btnText.innerText = "Resume";
+                icon.className = "bi bi-play-fill me-1";
+            } else {
+                gameState.isTimerRunning = true;
+                btnText.innerText = "Pause";
+                icon.className = "bi bi-pause-fill me-1";
+
+                gameState.timerInterval = setInterval(() => {
+                    gameState.timerSeconds--;
+                    const m = Math.floor(gameState.timerSeconds / 60).toString().padStart(2, '0');
+                    const s = (gameState.timerSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timer-display').innerText = `${m}:${s}`;
+                    updateTimerCircle(gameState.timerSeconds, 120);
+
+                    if (gameState.timerSeconds <= 0) {
+                        clearInterval(gameState.timerInterval);
+                        gameState.isTimerRunning = false;
+                        playSound('imposter');
+                        btnText.innerText = "Start";
+                        icon.className = "bi bi-play-fill me-1";
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameState.isTimerRunning = false;
+            gameState.timerSeconds = 120;
+            document.getElementById('timer-display').innerText = "02:00";
+            document.getElementById('timer-btn-text').innerText = "Start";
+            document.getElementById('timer-icon').className = "bi bi-play-fill me-1";
+            updateTimerCircle(120, 120);
+        }
+
+        /* ==========================================================================
+           STAGE 4: VOTING & REVEAL RESULT LOGIC
+           ========================================================================== */
+        function goToVoting() {
+            playSound('click');
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            switchStage('stage-voting');
+
+            const grid = document.getElementById('voting-players-grid');
+            grid.innerHTML = '';
+            document.getElementById('result-summary-box').classList.add('d-none');
+
+            gameState.players.forEach(p => {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-sm-4';
+
+                const disabled = p.eliminated ? 'disabled opacity-50' : '';
+                col.innerHTML = `
+                    <button type="button" class="glass-card-sm p-3 w-100 text-center text-white border-0 ${disabled}" 
+                            onclick="votePlayerOut(${p.id})" style="transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="bi bi-person-bounding-box fs-2 text-info d-block mb-1"></i>
+                        <strong class="d-block text-truncate fs-6">${p.name}</strong>
+                        <small class="text-muted fs-7">${p.eliminated ? 'Eliminated' : 'Tap to Vote'}</small>
+                    </button>
+                `;
+                grid.appendChild(col);
+            });
+        }
+
+        function votePlayerOut(playerId) {
+            playSound('click');
+            const votedPlayer = gameState.players.find(p => p.id === playerId);
+            if (!votedPlayer || votedPlayer.eliminated) return;
+
+            votedPlayer.eliminated = true;
+
+            const remainingImposters = gameState.players.filter(p => p.role === 'imposter' && !p.eliminated);
+            const remainingCivilians = gameState.players.filter(p => p.role === 'civilian' && !p.eliminated);
+
+            const resultBox = document.getElementById('result-summary-box');
+            resultBox.classList.remove('d-none');
+
+            // Win condition checking
+            if (votedPlayer.role === 'imposter') {
+                playSound('win');
+                if (remainingImposters.length === 0) {
+                    // Civilians Victory
+                    triggerConfetti();
+                    resultBox.innerHTML = `
+                        <div class="text-success mb-2"><i class="bi bi-trophy-fill display-3"></i></div>
+                        <h2 class="fw-black text-white neon-text-green mb-1">CIVILIANS WIN!</h2>
+                        <p class="text-white-50 small mb-3">You caught all Imposters! 🎯</p>
+                        <hr class="border-secondary">
+                        <div class="text-start fs-7">
+                            <p class="m-1">🟢 <strong>Civilian Word:</strong> <span class="text-success fw-bold">${gameState.secretPair.civilian}</span></p>
+                            <p class="m-1">🔴 <strong>Imposter Word:</strong> <span class="text-danger fw-bold">${gameState.secretPair.imposter}</span></p>
+                            <p class="m-1">🕵️‍♂️ <strong>Caught Imposter:</strong> ${votedPlayer.name}</p>
+                        </div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <h4 class="fw-bold text-warning mb-2">🎯 GOT ONE!</h4>
+                        <p class="text-white mb-0"><strong>${votedPlayer.name}</strong> was an <strong>IMPOSTER</strong>!</p>
+                        <p class="text-muted small mt-1">${remainingImposters.length} Imposter(s) still remaining. Keep playing!</p>
+                        <button class="btn btn-sm btn-outline-info mt-2" onclick="goToVoting()">Continue Voting</button>
+                    `;
+                }
+            } else {
+                playSound('imposter');
+                if (remainingCivilians.length <= remainingImposters.length) {
+                    // Imposters Victory
+                    resultBox.innerHTML = `
+                        <div class="text-danger mb-2"><i class="bi bi-incognito display-3"></i></div>
+                        <h2 class="fw-black text-white neon-text-red mb-1">IMPOSTERS WIN!</h2>
+                        <p class="text-white-50 small mb-3">The Imposters outsmarted the Civilians! 😈</p>
+                        <hr class="border-secondary">
+                        <div class="text-start fs-7">
+                            <p class="m-1">🔴 <strong>Imposters:</strong> ${gameState.players.filter(p => p.role === 'imposter').map(p => p.name).join(', ')}</p>
+                            <p class="m-1">🟢 <strong>Civilian Word:</strong> <span class="text-success fw-bold">${gameState.secretPair.civilian}</span></p>
+                            <p class="m-1">🔴 <strong>Imposter Word:</strong> <span class="text-danger fw-bold">${gameState.secretPair.imposter}</span></p>
+                        </div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <h4 class="fw-bold text-danger mb-2">❌ WRONG CHOICE!</h4>
+                        <p class="text-white mb-0"><strong>${votedPlayer.name}</strong> was an innocent <strong>CIVILIAN</strong>!</p>
+                        <p class="text-muted small mt-1">The Imposters remain hidden...</p>
+                    `;
+                }
+            }
+        }
+
+        function restartSameGame() {
+            playSound('click');
+            startGame();
+        }
+
+        function resetToSetup() {
+            playSound('click');
+            switchStage('stage-setup');
+        }
+
+        /* ==========================================================================
+           UTILITY FUNCTIONS
+           ========================================================================== */
+        function switchStage(stageId) {
+            document.querySelectorAll('.game-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            const activeSec = document.getElementById(stageId);
+            activeSec.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function triggerConfetti() {
+            try {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch (e) {
+                // Fail-safe
+            }
+        }
+    </script>
+</body>
+</html>
