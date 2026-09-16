@@ -1,4 +1,6 @@
-// STRICT SINGLE-WORD DATABASES (EXACTLY 10 WORDS EACH)
+// ==========================================
+// 1. WORD DATABASES
+// ==========================================
 const WORD_DATABASE = {
   manglish: [
     { civilian: "Porotta", imposter: "Chappathi" },
@@ -26,8 +28,8 @@ const WORD_DATABASE = {
   ]
 };
 
-// Game State
-let activeGameMode = 'local'; // 'local' or 'online'
+// State
+let activeGameMode = 'local'; 
 let totalPlayers = 5;
 let imposterCount = 1;
 let players = [];
@@ -37,10 +39,10 @@ let activeImposterWord = "";
 let timerInterval = null;
 let secondsLeft = 0;
 
-// PeerJS Online Multiplayer Vars
-let peer = null;
-let connectedPeers = [];
-let roomCode = "";
+// Online Specific
+let currentRoomCode = "";
+let myPlayerId = "";
+let isHost = false;
 
 // DOM Elements
 const setupStage = document.getElementById("setupStage");
@@ -53,165 +55,233 @@ const playerCountRange = document.getElementById("playerCountRange");
 const playerCountLabel = document.getElementById("playerCountLabel");
 const playerNamesContainer = document.getElementById("playerNamesContainer");
 const imposterCountSelect = document.getElementById("imposterCountSelect");
-const imposterNotice = document.getElementById("imposterNotice");
 const onlineModeBox = document.getElementById("onlineModeBox");
 
-// Mode Switcher
 function switchGameMode(mode) {
   activeGameMode = mode;
   const tabLocalBtn = document.getElementById("tabLocalBtn");
   const tabOnlineBtn = document.getElementById("tabOnlineBtn");
+  const localPlayerCountBox = document.getElementById("localPlayerCountBox");
+  const localPlayerNamesBox = document.getElementById("localPlayerNamesBox");
 
   if (mode === 'local') {
     tabLocalBtn.classList.add("active");
     tabOnlineBtn.classList.remove("active");
     onlineModeBox.classList.add("d-none");
+    localPlayerCountBox.classList.remove("d-none");
+    localPlayerNamesBox.classList.remove("d-none");
     document.getElementById("modeBadge").innerText = "Pass The Phone 📱";
   } else {
     tabOnlineBtn.classList.add("active");
     tabLocalBtn.classList.remove("active");
     onlineModeBox.classList.remove("d-none");
+    localPlayerCountBox.classList.add("d-none");
+    localPlayerNamesBox.classList.add("d-none");
     document.getElementById("modeBadge").innerText = "Online Room 🌐";
   }
 }
 
-// Render dynamic player name inputs
 function renderPlayerNameInputs(count) {
   playerNamesContainer.innerHTML = "";
   for (let i = 1; i <= count; i++) {
     const col = document.createElement("div");
     col.className = "col-6 col-md-4";
-    col.innerHTML = `
-      <input type="text" id="playerNameInput_${i}" class="form-control form-control-sm" placeholder="Player ${i}">
-    `;
+    col.innerHTML = `<input type="text" id="playerNameInput_${i}" class="form-control form-control-sm" placeholder="Player ${i}">`;
     playerNamesContainer.appendChild(col);
   }
 }
-
-// Initial render
 renderPlayerNameInputs(5);
 
-// Player slider listener
 playerCountRange.addEventListener("input", (e) => {
   totalPlayers = parseInt(e.target.value);
   playerCountLabel.innerText = `${totalPlayers} Players`;
-
   renderPlayerNameInputs(totalPlayers);
-
-  imposterCountSelect.innerHTML = "";
-  if (totalPlayers < 5) {
-    imposterCountSelect.innerHTML = `<option value="1">1 Imposter</option>`;
-    imposterNotice.style.display = "block";
-    imposterCount = 1;
-  } else {
-    imposterNotice.style.display = "none";
-    const maxImposters = Math.floor(totalPlayers / 2);
-    for (let i = 1; i <= maxImposters; i++) {
-      const opt = document.createElement("option");
-      opt.value = i;
-      opt.innerText = `${i} Imposter${i > 1 ? 's' : ''}`;
-      imposterCountSelect.appendChild(opt);
-    }
-  }
 });
 
-// Create Online Room (PeerJS Host)
+// ==========================================
+// 2. ONLINE ROOM MULTIPLAYER LOGIC
+// ==========================================
 function createOnlineRoom() {
-  roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-  peer = new Peer(`aalmar-room-${roomCode}`);
+  if (typeof firebase === 'undefined') {
+    return alert("Firebase not initialized yet! Check HTML scripts.");
+  }
+  const db = firebase.database();
+  isHost = true;
+  document.getElementById("joinRoomArea").classList.add("d-none");
+  
+  document.getElementById("btnCreateRoom").classList.add("btn-info", "text-dark");
+  document.getElementById("btnCreateRoom").classList.remove("btn-outline-info");
+  document.getElementById("btnJoinRoom").classList.add("btn-outline-warning");
+  document.getElementById("btnJoinRoom").classList.remove("btn-warning", "text-dark");
 
-  peer.on('open', (id) => {
-    document.getElementById("roomCodeDisplayBox").classList.remove("d-none");
-    document.getElementById("generatedRoomCode").innerText = roomCode;
+  currentRoomCode = Math.floor(1000 + Math.random() * 9000).toString();
+  myPlayerId = "host_" + Date.now();
+
+  const roomRef = db.ref('rooms/' + currentRoomCode);
+  roomRef.set({
+    status: 'LOBBY',
+    createdAt: Date.now(),
+    players: {
+      [myPlayerId]: { name: "Host (You)", isHost: true }
+    }
   });
 
-  peer.on('connection', (conn) => {
-    connectedPeers.push(conn);
-    document.getElementById("connectedPlayersCount").innerText = `${connectedPeers.length + 1} Players Connected`;
+  document.getElementById("roomCodeDisplayBox").classList.remove("d-none");
+  document.getElementById("generatedRoomCode").innerText = currentRoomCode;
+
+  // Listen for players joining in real-time
+  roomRef.child('players').on('value', (snapshot) => {
+    const playersList = snapshot.val() || {};
+    const ul = document.getElementById("playersUl");
+    ul.innerHTML = "";
+    players = [];
+    Object.keys(playersList).forEach((id) => {
+      const p = playersList[id];
+      ul.innerHTML += `<li>${p.name} ${p.isHost ? '(Host)' : ''}</li>`;
+      players.push({ id: id, name: p.name, isImposter: p.isImposter || false });
+    });
   });
 }
 
 function showJoinRoomInput() {
-  document.getElementById("joinRoomArea").classList.toggle("d-none");
+  document.getElementById("roomCodeDisplayBox").classList.add("d-none");
+  document.getElementById("joinRoomArea").classList.remove("d-none");
+
+  document.getElementById("btnJoinRoom").classList.add("btn-warning", "text-dark");
+  document.getElementById("btnJoinRoom").classList.remove("btn-outline-warning");
+  document.getElementById("btnCreateRoom").classList.add("btn-outline-info");
+  document.getElementById("btnCreateRoom").classList.remove("btn-info", "text-dark");
 }
 
-// Join Online Room (PeerJS Client)
 function joinOnlineRoom() {
+  if (typeof firebase === 'undefined') {
+    return alert("Firebase not initialized yet! Check HTML scripts.");
+  }
+  const db = firebase.database();
   const code = document.getElementById("roomCodeInput").value.trim();
-  if (!code) return alert("Please enter a valid 4-digit code!");
+  const name = document.getElementById("playerNameOnline").value.trim() || "Player";
+  if (!code) return alert("Enter 4-digit room code!");
 
-  peer = new Peer();
-  peer.on('open', () => {
-    const conn = peer.connect(`aalmar-room-${code}`);
-    conn.on('open', () => {
-      alert("Connected to Room! Waiting for host to start...");
+  currentRoomCode = code;
+  myPlayerId = "player_" + Date.now();
+
+  const roomRef = db.ref('rooms/' + currentRoomCode);
+  roomRef.once('value', (snapshot) => {
+    if (!snapshot.exists()) {
+      return alert("Room not found! Check code.");
+    }
+
+    roomRef.child('players/' + myPlayerId).set({
+      name: name,
+      isHost: false
     });
 
-    conn.on('data', (data) => {
-      if (data.type === 'START_GAME') {
+    alert("Joined room! Wait for host to start.");
+
+    // Listen for Host starting game
+    roomRef.on('value', (snap) => {
+      const data = snap.val();
+      if (data && data.status === 'STARTED') {
         activeCivilianWord = data.civilianWord;
         activeImposterWord = data.imposterWord;
-        players = data.players;
+        players = Object.values(data.players);
+
+        const myData = data.players[myPlayerId];
         setupStage.classList.add("d-none");
         onlineModeBox.classList.add("d-none");
         revealStage.classList.remove("d-none");
-        currentTurnIndex = data.myIndex;
-        updateRevealTurn();
+
+        showIndividualRole(myData);
       }
     });
   });
 }
 
-// Start Game
+function showIndividualRole(p) {
+  document.getElementById("turnIndicator").innerText = p.name;
+  document.getElementById("currentPlayerName").innerText = p.name;
+  document.getElementById("nextPlayerBtn").innerText = "I HAVE SEEN MY ROLE";
+
+  const cardBackView = document.getElementById("cardBackView");
+  const roleBadge = document.getElementById("roleBadge");
+  const wordDisplay = document.getElementById("wordDisplay");
+  const roleDescription = document.getElementById("roleDescription");
+
+  if (p.isImposter) {
+    cardBackView.className = "card-back imposter-theme";
+    roleBadge.className = "badge bg-danger mb-2 fs-6 pulse-animation";
+    roleBadge.innerText = "IMPOSTER 🕵️‍♂️";
+    wordDisplay.innerText = activeImposterWord;
+    roleDescription.innerText = "Blend in! Pretend you know the real civilian word.";
+  } else {
+    cardBackView.className = "card-back";
+    roleBadge.className = "badge bg-success mb-2 fs-6";
+    roleBadge.innerText = "CIVILIAN 😇";
+    wordDisplay.innerText = activeCivilianWord;
+    roleDescription.innerText = "Spot the player who gives suspicious clues!";
+  }
+}
+
+// ==========================================
+// 3. GAME FLOW LOGIC
+// ==========================================
 function startGame() {
   const category = categorySelect.value;
-  const db = WORD_DATABASE[category];
-  const randomPair = db[Math.floor(Math.random() * db.length)];
+  const dbWords = WORD_DATABASE[category];
+  const randomPair = dbWords[Math.floor(Math.random() * dbWords.length)];
   activeCivilianWord = randomPair.civilian;
   activeImposterWord = randomPair.imposter;
-
   imposterCount = parseInt(imposterCountSelect.value);
 
-  players = [];
-  for (let i = 1; i <= totalPlayers; i++) {
-    const inputVal = document.getElementById(`playerNameInput_${i}`)?.value.trim();
-    const finalName = inputVal !== "" ? inputVal : `Player ${i}`;
-    players.push({ id: i, name: finalName, isImposter: false });
-  }
-
-  // Shuffle & assign imposters
-  let assigned = 0;
-  while (assigned < imposterCount) {
-    let randIdx = Math.floor(Math.random() * totalPlayers);
-    if (!players[randIdx].isImposter) {
-      players[randIdx].isImposter = true;
-      assigned++;
+  if (activeGameMode === 'local') {
+    players = [];
+    for (let i = 1; i <= totalPlayers; i++) {
+      const inputVal = document.getElementById(`playerNameInput_${i}`)?.value.trim();
+      players.push({ id: i, name: inputVal !== "" ? inputVal : `Player ${i}`, isImposter: false });
     }
-  }
 
-  // If Online Host, broadcast secret roles to clients
-  if (activeGameMode === 'online' && connectedPeers.length > 0) {
-    connectedPeers.forEach((conn, index) => {
-      conn.send({
-        type: 'START_GAME',
-        civilianWord: activeCivilianWord,
-        imposterWord: activeImposterWord,
-        players: players,
-        myIndex: index + 1
-      });
+    let assigned = 0;
+    while (assigned < imposterCount) {
+      let randIdx = Math.floor(Math.random() * players.length);
+      if (!players[randIdx].isImposter) {
+        players[randIdx].isImposter = true;
+        assigned++;
+      }
+    }
+
+    currentTurnIndex = 0;
+    setupStage.classList.add("d-none");
+    revealStage.classList.remove("d-none");
+    updateRevealTurn();
+  } else { // Online Host Start
+    if (players.length < 3) return alert("Need at least 3 players to start online room!");
+
+    let assigned = 0;
+    while (assigned < imposterCount) {
+      let randIdx = Math.floor(Math.random() * players.length);
+      if (!players[randIdx].isImposter) {
+        players[randIdx].isImposter = true;
+        assigned++;
+      }
+    }
+
+    const updatedPlayersObj = {};
+    players.forEach(p => {
+      updatedPlayersObj[p.id] = p;
+    });
+
+    firebase.database().ref('rooms/' + currentRoomCode).update({
+      status: 'STARTED',
+      civilianWord: activeCivilianWord,
+      imposterWord: activeImposterWord,
+      players: updatedPlayersObj
     });
   }
-
-  currentTurnIndex = 0;
-  setupStage.classList.add("d-none");
-  onlineModeBox.classList.add("d-none");
-  revealStage.classList.remove("d-none");
-  updateRevealTurn();
 }
 
 function updateRevealTurn() {
   const p = players[currentTurnIndex];
-  document.getElementById("turnIndicator").innerText = `Player ${currentTurnIndex + 1} of ${totalPlayers}`;
+  document.getElementById("turnIndicator").innerText = `Player ${currentTurnIndex + 1} of ${players.length}`;
   document.getElementById("currentPlayerName").innerText = p.name;
   
   const cardContainer = document.getElementById("roleCard");
@@ -244,8 +314,12 @@ function flipCard() {
 }
 
 function nextPlayerTurn() {
+  if (activeGameMode === 'online') {
+    startDiscussionPhase();
+    return;
+  }
   currentTurnIndex++;
-  if (currentTurnIndex < totalPlayers) {
+  if (currentTurnIndex < players.length) {
     updateRevealTurn();
   } else {
     startDiscussionPhase();
@@ -260,17 +334,13 @@ function startDiscussionPhase() {
   document.getElementById("firstSpeakerName").innerText = `${randomSpeaker.name} goes first! 🗣️`;
 
   const timerSecs = parseInt(document.getElementById("timerSelect").value);
-
   if (timerSecs > 0) {
     secondsLeft = timerSecs;
     updateTimerUI(secondsLeft, timerSecs);
-    
     timerInterval = setInterval(() => {
       secondsLeft--;
       updateTimerUI(secondsLeft, timerSecs);
-      if (secondsLeft <= 0) {
-        clearInterval(timerInterval);
-      }
+      if (secondsLeft <= 0) clearInterval(timerInterval);
     }, 1000);
   } else {
     document.getElementById("timerContainer").classList.add("d-none");

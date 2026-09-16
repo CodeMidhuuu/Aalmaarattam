@@ -11,8 +11,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- PeerJS for Free Online Multiplayer -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  
+  <!-- FIREBASE COMPAT SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -40,14 +43,14 @@
     <div id="onlineModeBox" class="card glass-card p-4 mb-4 d-none">
       <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-wifi text-info me-2"></i>Online Multiplayer</h4>
       
-      <div class="row g-2">
+      <div class="row g-2 mb-3">
         <div class="col-6">
-          <button onclick="createOnlineRoom()" class="btn btn-outline-info w-100 py-2 fw-bold rounded-3">
+          <button id="btnCreateRoom" onclick="createOnlineRoom()" class="btn btn-outline-info w-100 py-2 fw-bold rounded-3">
             <i class="fa-solid fa-plus-circle me-1"></i> Create Room
           </button>
         </div>
         <div class="col-6">
-          <button onclick="showJoinRoomInput()" class="btn btn-outline-warning w-100 py-2 fw-bold rounded-3">
+          <button id="btnJoinRoom" onclick="showJoinRoomInput()" class="btn btn-outline-warning w-100 py-2 fw-bold rounded-3">
             <i class="fa-solid fa-right-to-bracket me-1"></i> Join Room
           </button>
         </div>
@@ -55,17 +58,23 @@
 
       <!-- Join Input Area -->
       <div id="joinRoomArea" class="mt-3 d-none">
-        <div class="input-group">
-          <input type="text" id="roomCodeInput" class="form-control text-uppercase" placeholder="Enter 4-Digit Code (e.g. 4821)">
-          <button onclick="joinOnlineRoom()" class="btn btn-warning fw-bold">JOIN</button>
+        <div class="mb-2">
+          <input type="text" id="playerNameOnline" class="form-control mb-2" placeholder="Your Name (e.g. Rahul)">
+          <div class="input-group">
+            <input type="text" id="roomCodeInput" class="form-control text-uppercase" placeholder="Enter 4-Digit Room Code">
+            <button onclick="joinOnlineRoom()" class="btn btn-warning fw-bold">JOIN</button>
+          </div>
         </div>
       </div>
 
-      <!-- Display Generated Room Code -->
+      <!-- Host Display Room Code & Lobby -->
       <div id="roomCodeDisplayBox" class="alert alert-info border-info mt-3 mb-0 text-center d-none">
-        <span class="small d-block text-uppercase fw-bold">Share This Room Code With Friends:</span>
-        <h2 class="fw-extrabold text-white mb-0" id="generatedRoomCode">----</h2>
-        <span id="connectedPlayersCount" class="badge bg-dark mt-2">1 Player Connected</span>
+        <span class="small d-block text-uppercase fw-bold">Share Room Code With Friends:</span>
+        <h2 class="fw-extrabold text-white mb-1" id="generatedRoomCode">----</h2>
+        <div id="connectedPlayersList" class="mt-2 text-start bg-dark p-2 rounded border border-info small">
+          <strong>Players Joined:</strong>
+          <ul id="playersUl" class="mb-0 ps-3"></ul>
+        </div>
       </div>
     </div>
 
@@ -76,7 +85,7 @@
         <h4 class="fw-bold mb-0 text-white">Game Configuration</h4>
       </div>
 
-      <!-- Language Selection (Only Manglish & English) -->
+      <!-- Language Selection -->
       <div class="setup-box">
         <label for="categorySelect" class="form-label label-title">
           <i class="fa-solid fa-language me-1"></i> SELECT LANGUAGE
@@ -87,8 +96,8 @@
         </select>
       </div>
 
-      <!-- Player Count Slider -->
-      <div class="setup-box">
+      <!-- Player Count Slider (Pass & Play Mode) -->
+      <div class="setup-box" id="localPlayerCountBox">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <label for="playerCountRange" class="form-label label-title mb-0">
             <i class="fa-solid fa-users me-1"></i> TOTAL PLAYERS
@@ -98,17 +107,15 @@
         <input type="range" class="form-range" id="playerCountRange" min="3" max="24" value="5">
       </div>
 
-      <!-- Player Names Input Section -->
-      <div class="setup-box">
+      <!-- Player Names Input Section (Pass & Play Mode) -->
+      <div class="setup-box" id="localPlayerNamesBox">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <label class="form-label label-title mb-0">
             <i class="fa-solid fa-id-card me-1"></i> PLAYER NAMES (OPTIONAL)
           </label>
           <span class="text-subtext small">(Leave blank for default)</span>
         </div>
-        <div id="playerNamesContainer" class="row g-2 player-names-grid">
-          <!-- Dynamic name inputs rendered by JS -->
-        </div>
+        <div id="playerNamesContainer" class="row g-2 player-names-grid"></div>
       </div>
 
       <!-- Imposter Count Selector -->
@@ -120,9 +127,6 @@
           <option value="1">1 Imposter</option>
           <option value="2">2 Imposters</option>
         </select>
-        <div id="imposterNotice" class="form-text text-warning mt-2 fw-semibold" style="display: none;">
-          <i class="fa-solid fa-triangle-exclamation me-1"></i>Under 5 players is locked to 1 Imposter.
-        </div>
       </div>
 
       <!-- Discussion Timer Option -->
@@ -169,7 +173,7 @@
       </div>
 
       <button id="nextPlayerBtn" onclick="nextPlayerTurn()" class="btn btn-cyber-primary btn-lg w-100 py-3 rounded-4 mt-2" disabled>
-        HIDE & PASS PHONE <i class="fa-solid fa-arrow-right ms-2"></i>
+        HIDE & CONTINUE <i class="fa-solid fa-arrow-right ms-2"></i>
       </button>
     </div>
 
@@ -231,6 +235,36 @@
     </div>
 
   </div>
+
+
+  
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpWjImAcf74swHloAek08Jot4kfsx74K4",
+    authDomain: "aalmarattam.firebaseapp.com",
+    projectId: "aalmarattam",
+    storageBucket: "aalmarattam.firebasestorage.app",
+    messagingSenderId: "417294116489",
+    appId: "1:417294116489:web:db749273eb4cf0fbc90858",
+    measurementId: "G-2V4F9M45YN"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  // Initialize Firebase immediately when script loads
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+</script>
 
   <!-- Custom JavaScript -->
   <script src="script.js"></script>
