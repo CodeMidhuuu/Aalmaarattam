@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IMPOSTER // Malayalam & Manglish Edition</title>
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --card-bg: rgba(15, 23, 42, 0.92);
+      --neon-purple: #a855f7;
+      --neon-cyan: #38bdf8;
+      --imposter-red: #ef4444;
+      --civilian-green: #10b981;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top center, #1e113f 0%, var(--bg-dark) 75%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Main Setup Glass Card Upgrade */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(168, 85, 247, 0.3);
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.15), 0 10px 30px rgba(0, 0, 0, 0.6);
+      border-radius: 1.75rem;
+    }
+
+    .neon-title {
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #c084fc, #f472b6, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 35px rgba(192, 132, 252, 0.4);
+    }
+
+    /* High Contrast Text Fixes */
+    .label-title {
+      color: var(--neon-cyan) !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .text-subtext {
+      color: #cbd5e1 !important;
+      font-weight: 500;
+    }
+
+    /* Custom Form Controls with Boosted Contrast */
+    .form-control, .form-select {
+      background-color: #0f172a !important;
+      border: 2px solid rgba(56, 189, 248, 0.3) !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      border-radius: 0.85rem;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+    }
+
+    .form-control::placeholder {
+      color: #64748b !important;
+      font-weight: 400;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--neon-cyan) !important;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4) !important;
+    }
+
+    .form-select option {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    /* Setup Section Containers */
+    .setup-box {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Range Slider Styling */
+    .form-range::-webkit-slider-thumb {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    /* Player Names Grid Scrollable */
+    .player-names-grid {
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .player-names-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+    .player-names-grid::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+      border-radius: 4px;
+    }
+
+    /* 3D Secret Flip Card */
+    .card-container {
+      perspective: 1000px;
+      width: 100%;
+      height: 320px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+
+    .card-container.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card-front {
+      background: linear-gradient(145deg, #1e1b4b, #311042);
+      border: 2px solid var(--neon-purple);
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+    }
+
+    .card-back {
+      background: linear-gradient(145deg, #0f172a, #1e293b);
+      transform: rotateY(180deg);
+      border: 2px solid var(--neon-cyan);
+    }
+
+    .card-back.imposter-theme {
+      border-color: var(--imposter-red);
+      background: linear-gradient(145deg, #450a0a, #180202);
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Buttons */
+    .btn-cyber-primary {
+      background: linear-gradient(135deg, #8b5cf6, #d946ef);
+      border: none;
+      color: #ffffff;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-cyber-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(139, 92, 246, 0.6);
+      color: #ffffff;
+    }
+
+    .btn-cyber-danger {
+      background: linear-gradient(135deg, #ef4444, #f43f5e);
+      border: none;
+      color: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .badge-cyber {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Pulse animation */
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="py-4">
+
+  <div class="container" style="max-width: 650px;">
+    
+    <!-- HEADER -->
+    <div class="text-center mb-4">
+      <h1 class="display-3 neon-title mb-1"><i class="fa-solid fa-user-ninja me-2"></i>IMPOSTER</h1>
+      <p class="text-subtext fs-6 fw-semibold">Find the traitor among your friends! 🕵️‍♂️🔥</p>
+    </div>
+
+    <!-- STAGE 1: GAME SETUP -->
+    <div id="setupStage" class="card glass-card p-4">
+      <div class="d-flex align-items-center mb-3">
+        <i class="fa-solid fa-sliders text-info fs-4 me-2"></i>
+        <h4 class="fw-bold mb-0 text-white">Game Configuration</h4>
+      </div>
+
+      <!-- Language / Category Selection -->
+      <div class="setup-box">
+        <label for="categorySelect" class="form-label label-title">
+          <i class="fa-solid fa-language me-1"></i> SELECT LANGUAGE & CATEGORY
+        </label>
+        <select id="categorySelect" class="form-select form-select-lg">
+          <option value="manglish" selected>🌴 Manglish (Single Words)</option>
+          <option value="english">🌐 English (Single Words)</option>
+          <option value="malayalam">🅰️ Malayalam Script (ഒറ്റവാക്ക്)</option>
+          <option value="custom">✏️ Custom Words (Add Your Own)</option>
+        </select>
+      </div>
+
+      <!-- Custom Input (Hidden by default) -->
+      <div id="customWordBox" class="setup-box d-none border-warning">
+        <label class="form-label label-title text-warning">ENTER CUSTOM SINGLE-WORD PAIR</label>
+        <div class="row g-2">
+          <div class="col-6">
+            <input type="text" id="customCivilianWord" class="form-control" placeholder="Civilian Word (e.g. Porotta)">
+          </div>
+          <div class="col-6">
+            <input type="text" id="customImposterWord" class="form-control" placeholder="Imposter Word (e.g. Chappathi)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Count Slider -->
+      <div class="setup-box">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label for="playerCountRange" class="form-label label-title mb-0">
+            <i class="fa-solid fa-users me-1"></i> TOTAL PLAYERS
+          </label>
+          <span id="playerCountLabel" class="badge bg-primary fs-6 px-3 py-2">5 Players</span>
+        </div>
+        <input type="range" class="form-range" id="playerCountRange" min="3" max="24" value="5">
+      </div>
+
+      <!-- Player Names Input Section -->
+      <div class="setup-box">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="form-label label-title mb-0">
+            <i class="fa-solid fa-id-card me-1"></i> PLAYER NAMES (OPTIONAL)
+          </label>
+          <span class="text-subtext small">(Leave blank for default names)</span>
+        </div>
+        <div id="playerNamesContainer" class="row g-2 player-names-grid">
+          <!-- Dynamic name inputs rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Imposter Count Selector -->
+      <div class="setup-box">
+        <label for="imposterCountSelect" class="form-label label-title">
+          <i class="fa-solid fa-user-secret me-1"></i> NUMBER OF IMPOSTERS
+        </label>
+        <select id="imposterCountSelect" class="form-select">
+          <option value="1">1 Imposter</option>
+          <option value="2">2 Imposters</option>
+        </select>
+        <div id="imposterNotice" class="form-text text-warning mt-2 fw-semibold" style="display: none;">
+          <i class="fa-solid fa-triangle-exclamation me-1"></i>Under 5 players is locked to 1 Imposter.
+        </div>
+      </div>
+
+      <!-- Discussion Timer Option -->
+      <div class="setup-box">
+        <label for="timerSelect" class="form-label label-title">
+          <i class="fa-solid fa-clock me-1"></i> DISCUSSION TIMER
+        </label>
+        <select id="timerSelect" class="form-select">
+          <option value="120">2 Minutes</option>
+          <option value="180" selected>3 Minutes</option>
+          <option value="300">5 Minutes</option>
+          <option value="0">No Timer</option>
+        </select>
+      </div>
+
+      <button onclick="startGame()" class="btn btn-cyber-primary btn-lg w-100 py-3 rounded-4 mt-2">
+        START GAME <i class="fa-solid fa-play ms-2"></i>
+      </button>
+    </div>
+
+    <!-- STAGE 2: ROLE PASS & REVEAL -->
+    <div id="revealStage" class="card glass-card p-4 text-center d-none">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="badge badge-cyber px-3 py-2 rounded-pill fs-6" id="turnIndicator">Player 1 of 5</span>
+        <span class="badge bg-secondary px-3 py-2 rounded-pill fs-6">Pass The Phone 📱</span>
+      </div>
+
+      <h3 class="fw-bold mb-3 text-white" id="playerTurnTitle">Pass phone to <span class="text-info" id="currentPlayerName">Player 1</span></h3>
+
+      <!-- 3D Secret Card Flip -->
+      <div class="card-container my-3" id="roleCard" onclick="flipCard()">
+        <div class="card-inner">
+          <div class="card-front">
+            <i class="fa-solid fa-user-secret fa-4x text-purple mb-3"></i>
+            <h4 class="fw-bold text-white">TAP TO REVEAL ROLE</h4>
+            <p class="text-subtext small">Make sure nobody else is looking!</p>
+          </div>
+          <div class="card-back" id="cardBackView">
+            <div id="roleBadge" class="badge bg-success mb-2 fs-6">CIVILIAN</div>
+            <h2 id="wordDisplay" class="display-5 fw-extrabold text-white mb-2">POROTTA</h2>
+            <p id="roleDescription" class="text-subtext small mb-0">Bluff your way out or spot the imposter!</p>
+          </div>
+        </div>
+      </div>
+
+      <button id="nextPlayerBtn" onclick="nextPlayerTurn()" class="btn btn-cyber-primary btn-lg w-100 py-3 rounded-4 mt-2" disabled>
+        HIDE & PASS PHONE <i class="fa-solid fa-arrow-right ms-2"></i>
+      </button>
+    </div>
+
+    <!-- STAGE 3: DISCUSSION & TIMER -->
+    <div id="gameplayStage" class="card glass-card p-4 text-center d-none">
+      <h3 class="fw-bold text-white mb-1"><i class="fa-solid fa-comments text-warning me-2"></i>Discussion Phase</h3>
+      <p class="text-subtext small mb-3">Ask questions, give single-word clues, and catch the imposter!</p>
+
+      <!-- First Speaker Highlight -->
+      <div class="alert alert-dark border border-info rounded-4 mb-4 py-3 bg-opacity-75">
+        <span class="text-subtext small d-block uppercase fw-bold">FIRST SPEAKER</span>
+        <h4 class="fw-bold text-info mb-0" id="firstSpeakerName">Player 3 goes first! 🗣️</h4>
+      </div>
+
+      <!-- Timer Display -->
+      <div id="timerContainer" class="my-3">
+        <div class="display-2 fw-bold text-white" id="timerDisplay">03:00</div>
+        <div class="progress mt-2" style="height: 8px;">
+          <div id="timerBar" class="progress-bar bg-info" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="d-grid gap-2 mt-4">
+        <button onclick="revealResults()" class="btn btn-cyber-danger btn-lg py-3 rounded-4">
+          END GAME & REVEAL IMPOSTER <i class="fa-solid fa-mask ms-2"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 4: RESULTS -->
+    <div id="resultStage" class="card glass-card p-4 text-center d-none">
+      <div class="pulse-animation mb-3">
+        <i class="fa-solid fa-trophy fa-4x text-warning"></i>
+      </div>
+      <h2 class="fw-bold text-white mb-1">Game Over!</h2>
+      <p class="text-subtext mb-4">Here are the secret details of the round.</p>
+
+      <!-- Result Display Cards -->
+      <div class="bg-dark p-3 rounded-4 border border-danger mb-3">
+        <span class="text-subtext small d-block fw-bold text-uppercase">THE IMPOSTER(S) WAS</span>
+        <h3 class="fw-bold text-danger mb-0 fs-2" id="imposterNamesDisplay">Player 2</h3>
+      </div>
+
+      <div class="row g-2 mb-4">
+        <div class="col-6">
+          <div class="bg-dark p-3 rounded-4 border border-success">
+            <span class="text-subtext small d-block fw-bold text-uppercase">CIVILIAN WORD</span>
+            <h4 class="fw-bold text-success mb-0" id="civilianWordResult">Porotta</h4>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="bg-dark p-3 rounded-4 border border-danger">
+            <span class="text-subtext small d-block fw-bold text-uppercase">IMPOSTER WORD</span>
+            <h4 class="fw-bold text-danger mb-0" id="imposterWordResult">Chappathi</h4>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="resetToSetup()" class="btn btn-cyber-primary btn-lg w-100 py-3 rounded-4">
+        PLAY AGAIN <i class="fa-solid fa-rotate-right ms-2"></i>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT GAME LOGIC -->
+  <script>
+    // STRICT SINGLE-WORD DATABASES
+    const WORD_DATABASE = {
+      manglish: [
+        { civilian: "Porotta", imposter: "Chappathi" },
+        { civilian: "Lalettan", imposter: "Mammootty" },
+        { civilian: "Kappi", imposter: "Chaya" },
+        { civilian: "Kochi", imposter: "Trivandrum" },
+        { civilian: "Biriyani", imposter: "Friedrice" },
+        { civilian: "Sadya", imposter: "Payasam" },
+        { civilian: "Thattukada", imposter: "Restaurant" },
+        { civilian: "Autokaaran", imposter: "Busdriver" },
+        { civilian: "Football", imposter: "Cricket" },
+        { civilian: "Pazham", imposter: "Appam" },
+        { civilian: "Sambar", imposter: "Rasam" },
+        { civilian: "Cinema", imposter: "Natakam" }
+      ],
+      english: [
+        { civilian: "Pizza", imposter: "Burger" },
+        { civilian: "Doctor", imposter: "Nurse" },
+        { civilian: "Guitar", imposter: "Piano" },
+        { civilian: "Batman", imposter: "Superman" },
+        { civilian: "Coffee", imposter: "Tea" },
+        { civilian: "iPhone", imposter: "Android" },
+        { civilian: "Laptop", imposter: "Desktop" },
+        { civilian: "Football", imposter: "Basketball" }
+      ],
+      malayalam: [
+        { civilian: "പൊറോട്ട", imposter: "ചപ്പാത്തി" },
+        { civilian: "ലാലേട്ടൻ", imposter: "മമ്മൂക്ക" },
+        { civilian: "കാപ്പി", imposter: "ചായ" },
+        { civilian: "കൊച്ചി", imposter: "തൃശ്ശൂർ" },
+        { civilian: "മീൻ", imposter: "ഇറച്ചി" },
+        { civilian: "സിനിമ", imposter: "നാടകം" }
+      ]
+    };
+
+    // State Variables
+    let totalPlayers = 5;
+    let imposterCount = 1;
+    let players = [];
+    let currentTurnIndex = 0;
+    let activeCivilianWord = "";
+    let activeImposterWord = "";
+    let timerInterval = null;
+    let secondsLeft = 0;
+
+    // DOM Elements
+    const setupStage = document.getElementById("setupStage");
+    const revealStage = document.getElementById("revealStage");
+    const gameplayStage = document.getElementById("gameplayStage");
+    const resultStage = document.getElementById("resultStage");
+
+    const categorySelect = document.getElementById("categorySelect");
+    const customWordBox = document.getElementById("customWordBox");
+    const playerCountRange = document.getElementById("playerCountRange");
+    const playerCountLabel = document.getElementById("playerCountLabel");
+    const playerNamesContainer = document.getElementById("playerNamesContainer");
+    const imposterCountSelect = document.getElementById("imposterCountSelect");
+    const imposterNotice = document.getElementById("imposterNotice");
+
+    // Initialize player name input grid
+    function renderPlayerNameInputs(count) {
+      playerNamesContainer.innerHTML = "";
+      for (let i = 1; i <= count; i++) {
+        const col = document.createElement("div");
+        col.className = "col-6 col-md-4";
+        col.innerHTML = `
+          <input type="text" id="playerNameInput_${i}" class="form-control form-control-sm" placeholder="Player ${i}">
+        `;
+        playerNamesContainer.appendChild(col);
+      }
+    }
+
+    // Initial render on load
+    renderPlayerNameInputs(5);
+
+    // Category switch custom input display
+    categorySelect.addEventListener("change", (e) => {
+      if (e.target.value === "custom") {
+        customWordBox.classList.remove("d-none");
+      } else {
+        customWordBox.classList.add("d-none");
+      }
+    });
+
+    // Player slider dynamic handler
+    playerCountRange.addEventListener("input", (e) => {
+      totalPlayers = parseInt(e.target.value);
+      playerCountLabel.innerText = `${totalPlayers} Players`;
+
+      // Re-render player name inputs dynamically
+      renderPlayerNameInputs(totalPlayers);
+
+      // Update imposter options based on rule (< 5 players = locked to 1)
+      imposterCountSelect.innerHTML = "";
+      if (totalPlayers < 5) {
+        imposterCountSelect.innerHTML = `<option value="1">1 Imposter</option>`;
+        imposterNotice.style.display = "block";
+        imposterCount = 1;
+      } else {
+        imposterNotice.style.display = "none";
+        const maxImposters = Math.floor(totalPlayers / 2);
+        for (let i = 1; i <= maxImposters; i++) {
+          const opt = document.createElement("option");
+          opt.value = i;
+          opt.innerText = `${i} Imposter${i > 1 ? 's' : ''}`;
+          imposterCountSelect.appendChild(opt);
+        }
+      }
+    });
+
+    // Start Game Function
+    function startGame() {
+      const category = categorySelect.value;
+      
+      // Select Word Pair
+      if (category === "custom") {
+        activeCivilianWord = document.getElementById("customCivilianWord").value.trim() || "Secret";
+        activeImposterWord = document.getElementById("customImposterWord").value.trim() || "Bluff";
+      } else {
+        const db = WORD_DATABASE[category];
+        const randomPair = db[Math.floor(Math.random() * db.length)];
+        activeCivilianWord = randomPair.civilian;
+        activeImposterWord = randomPair.imposter;
+      }
+
+      imposterCount = parseInt(imposterCountSelect.value);
+
+      // Collect Custom or Default Player Names
+      players = [];
+      for (let i = 1; i <= totalPlayers; i++) {
+        const inputVal = document.getElementById(`playerNameInput_${i}`)?.value.trim();
+        const finalName = inputVal !== "" ? inputVal : `Player ${i}`;
+        players.push({ id: i, name: finalName, isImposter: false });
+      }
+
+      // Shuffle and pick imposters
+      let assigned = 0;
+      while (assigned < imposterCount) {
+        let randIdx = Math.floor(Math.random() * totalPlayers);
+        if (!players[randIdx].isImposter) {
+          players[randIdx].isImposter = true;
+          assigned++;
+        }
+      }
+
+      // Transition to Stage 2
+      currentTurnIndex = 0;
+      setupStage.classList.add("d-none");
+      revealStage.classList.remove("d-none");
+      updateRevealTurn();
+    }
+
+    // Update Stage 2 Turn UI
+    function updateRevealTurn() {
+      const p = players[currentTurnIndex];
+      document.getElementById("turnIndicator").innerText = `Player ${currentTurnIndex + 1} of ${totalPlayers}`;
+      document.getElementById("currentPlayerName").innerText = p.name;
+      
+      // Reset Card Flip
+      const cardContainer = document.getElementById("roleCard");
+      const cardBackView = document.getElementById("cardBackView");
+      const roleBadge = document.getElementById("roleBadge");
+      const wordDisplay = document.getElementById("wordDisplay");
+      const roleDescription = document.getElementById("roleDescription");
+
+      cardContainer.classList.remove("flipped");
+      document.getElementById("nextPlayerBtn").disabled = true;
+
+      if (p.isImposter) {
+        cardBackView.className = "card-back imposter-theme";
+        roleBadge.className = "badge bg-danger mb-2 fs-6 pulse-animation";
+        roleBadge.innerText = "IMPOSTER 🕵️‍♂️";
+        wordDisplay.innerText = activeImposterWord;
+        roleDescription.innerText = "Blend in! Pretend you know the real civilian word.";
+      } else {
+        cardBackView.className = "card-back";
+        roleBadge.className = "badge bg-success mb-2 fs-6";
+        roleBadge.innerText = "CIVILIAN 😇";
+        wordDisplay.innerText = activeCivilianWord;
+        roleDescription.innerText = "Spot the player who gives suspicious or weird clues!";
+      }
+    }
+
+    // Flip Card Action
+    function flipCard() {
+      const cardContainer = document.getElementById("roleCard");
+      cardContainer.classList.toggle("flipped");
+      document.getElementById("nextPlayerBtn").disabled = false;
+    }
+
+    // Next Player Turn
+    function nextPlayerTurn() {
+      currentTurnIndex++;
+      if (currentTurnIndex < totalPlayers) {
+        updateRevealTurn();
+      } else {
+        startDiscussionPhase();
+      }
+    }
+
+    // Stage 3: Discussion Phase
+    function startDiscussionPhase() {
+      revealStage.classList.add("d-none");
+      gameplayStage.classList.remove("d-none");
+
+      // Random speaker generator
+      const randomSpeaker = players[Math.floor(Math.random() * players.length)];
+      document.getElementById("firstSpeakerName").innerText = `${randomSpeaker.name} goes first! 🗣️`;
+
+      // Setup Timer
+      const timerSecs = parseInt(document.getElementById("timerSelect").value);
+      const timerDisplay = document.getElementById("timerDisplay");
+      const timerBar = document.getElementById("timerBar");
+
+      if (timerSecs > 0) {
+        secondsLeft = timerSecs;
+        updateTimerUI(secondsLeft, timerSecs);
+        
+        timerInterval = setInterval(() => {
+          secondsLeft--;
+          updateTimerUI(secondsLeft, timerSecs);
+          if (secondsLeft <= 0) {
+            clearInterval(timerInterval);
+          }
+        }, 1000);
+      } else {
+        document.getElementById("timerContainer").classList.add("d-none");
+      }
+    }
+
+    function updateTimerUI(left, total) {
+      const mins = Math.floor(left / 60).toString().padStart(2, '0');
+      const secs = (left % 60).toString().padStart(2, '0');
+      document.getElementById("timerDisplay").innerText = `${mins}:${secs}`;
+      const pct = (left / total) * 100;
+      document.getElementById("timerBar").style.width = `${pct}%`;
+    }
+
+    // Stage 4: Results
+    function revealResults() {
+      if (timerInterval) clearInterval(timerInterval);
+      gameplayStage.classList.add("d-none");
+      resultStage.classList.remove("d-none");
+
+      const imposters = players.filter(p => p.isImposter).map(p => p.name).join(", ");
+      document.getElementById("imposterNamesDisplay").innerText = imposters;
+      document.getElementById("civilianWordResult").innerText = activeCivilianWord;
+      document.getElementById("imposterWordResult").innerText = activeImposterWord;
+    }
+
+    // Reset Game
+    function resetToSetup() {
+      resultStage.classList.add("d-none");
+      setupStage.classList.remove("d-none");
+    }
+  </script>
+</body>
+</html>
